@@ -212,6 +212,7 @@ nav.scrolled {
   color: var(--text-muted);
 }
 
+/* Desktop nav - always visible */
 .nav-links {
   display: flex;
   gap: 2rem;
@@ -240,10 +241,27 @@ nav.scrolled {
   width: 100%;
 }
 
+/* Mobile Navigation Overlay */
+.nav-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 999;
+}
+
+.nav-overlay.active {
+  display: block;
+}
+
 /* Hamburger Menu */
 .hamburger {
   display: none;
   cursor: pointer;
+  z-index: 1002;
+  background: none;
+  border: none;
+  padding: 4px;
 }
 
 .hamburger div {
@@ -252,6 +270,7 @@ nav.scrolled {
   background-color: var(--primary-navy);
   margin: 5px;
   transition: all 0.3s ease;
+  border-radius: 2px;
 }
 
 /* Hero Section */
@@ -1052,19 +1071,25 @@ footer {
   .nav-links {
     position: fixed;
     top: 0;
-    right: -100%;
+    right: 0;
     width: 80vw;
     max-width: 300px;
     height: 100vh;
     background-color: var(--primary-navy);
     flex-direction: column;
     padding-top: calc(var(--nav-height) + 2rem);
-    transition: 0.4s ease-in-out;
-    box-shadow: -5px 0 15px rgba(0,0,0,0.1);
+    /* Hidden by default via transform — safe at any zoom level */
+    transform: translateX(100%);
+    transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: -5px 0 20px rgba(0,0,0,0.2);
+    z-index: 1001;
+    pointer-events: none;
+    overflow-y: auto;
   }
 
   .nav-links.nav-active {
-    right: 0;
+    transform: translateX(0);
+    pointer-events: all;
   }
 
   .nav-links li {

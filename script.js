@@ -3,23 +3,43 @@ document.addEventListener('DOMContentLoaded', () => {
   const hamburger = document.querySelector('.hamburger');
   const navLinks = document.querySelector('.nav-links');
   const links = document.querySelectorAll('.nav-links li a');
+  const overlay = document.getElementById('nav-overlay');
+
+  function openNav() {
+    navLinks.classList.add('nav-active');
+    hamburger.classList.add('toggle');
+    if (overlay) overlay.classList.add('active');
+    document.body.style.overflow = 'hidden'; // Prevent background scroll
+  }
+
+  function closeNav() {
+    navLinks.classList.remove('nav-active');
+    hamburger.classList.remove('toggle');
+    if (overlay) overlay.classList.remove('active');
+    document.body.style.overflow = '';
+  }
 
   hamburger.addEventListener('click', () => {
-    // Toggle Nav
-    navLinks.classList.toggle('nav-active');
-    
-    // Burger Animation
-    hamburger.classList.toggle('toggle');
+    if (navLinks.classList.contains('nav-active')) {
+      closeNav();
+    } else {
+      openNav();
+    }
   });
 
-  // Close mobile nav when link is clicked
+  // Close when clicking a nav link
   links.forEach(link => {
-    link.addEventListener('click', () => {
-      if (navLinks.classList.contains('nav-active')) {
-        navLinks.classList.remove('nav-active');
-        hamburger.classList.remove('toggle');
-      }
-    });
+    link.addEventListener('click', closeNav);
+  });
+
+  // Close when clicking the overlay (outside the menu)
+  if (overlay) {
+    overlay.addEventListener('click', closeNav);
+  }
+
+  // Close on Escape key
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closeNav();
   });
 
   // Sticky Navbar Update on scroll
