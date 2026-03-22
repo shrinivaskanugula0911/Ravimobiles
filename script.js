@@ -1,126 +1,92 @@
-document.addEventListener('DOMContentLoaded', () => {
-  // Mobile Navigation Toggle
-  const hamburger = document.querySelector('.hamburger');
-  const navLinks = document.querySelector('.nav-links');
-  const links = document.querySelectorAll('.nav-links li a');
-  const overlay = document.getElementById('nav-overlay');
+// Scroll Reveal Animation
+const observerOptions = {
+    threshold: 0.1
+};
 
-  function openNav() {
-    navLinks.classList.add('nav-active');
-    hamburger.classList.add('toggle');
-    if (overlay) overlay.classList.add('active');
-    document.body.style.overflow = 'hidden'; // Prevent background scroll
-  }
-
-  function closeNav() {
-    navLinks.classList.remove('nav-active');
-    hamburger.classList.remove('toggle');
-    if (overlay) overlay.classList.remove('active');
-    document.body.style.overflow = '';
-  }
-
-  hamburger.addEventListener('click', () => {
-    if (navLinks.classList.contains('nav-active')) {
-      closeNav();
-    } else {
-      openNav();
-    }
-  });
-
-  // Close when clicking a nav link
-  links.forEach(link => {
-    link.addEventListener('click', closeNav);
-  });
-
-  // Close when clicking the overlay (outside the menu)
-  if (overlay) {
-    overlay.addEventListener('click', closeNav);
-  }
-
-  // Close on Escape key
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') closeNav();
-  });
-
-  // Sticky Navbar Update on scroll
-  const navbar = document.getElementById('navbar');
-  window.addEventListener('scroll', () => {
-    if (window.scrollY > 50) {
-      navbar.classList.add('scrolled');
-    } else {
-      navbar.classList.remove('scrolled');
-    }
-  });
-
-  // Scroll Reveal Animation (Intersection Observer)
-  const reveals = document.querySelectorAll('.reveal, .reveal-right');
-  
-  const revealOptions = {
-    threshold: 0.15,
-    rootMargin: "0px 0px -50px 0px"
-  };
-
-  const revealOnScroll = new IntersectionObserver((entries, observer) => {
+const observer = new IntersectionObserver((entries) => {
     entries.forEach(entry => {
-      if (!entry.isIntersecting) {
-        return;
-      } else {
-        entry.target.classList.add('active');
-        observer.unobserve(entry.target); // Optional: stop observing once revealed
-      }
-    });
-  }, revealOptions);
-
-  reveals.forEach(reveal => {
-    revealOnScroll.observe(reveal);
-  });
-
-  // Highlight Active Nav Link on Scroll
-  const sections = document.querySelectorAll('section');
-  
-  window.addEventListener('scroll', () => {
-    let current = '';
-    
-    sections.forEach(section => {
-      const sectionTop = section.offsetTop;
-      const sectionHeight = section.clientHeight;
-      
-      if (scrollY >= (sectionTop - 200)) {
-        current = section.getAttribute('id');
-      }
-    });
-
-    links.forEach(link => {
-      link.classList.remove('active');
-      if (link.getAttribute('href') === `#${current}`) {
-        link.classList.add('active');
-      }
-    });
-  });
-
-  // Category Filtering for Products
-  const tabBtns = document.querySelectorAll('.tab-btn');
-  const productCards = document.querySelectorAll('.product-card');
-
-  tabBtns.forEach(btn => {
-    btn.addEventListener('click', () => {
-      // Remove active class from all tabs
-      tabBtns.forEach(t => t.classList.remove('active'));
-      // Add active to clicked tab
-      btn.classList.add('active');
-      
-      const targetCategory = btn.getAttribute('data-target');
-      
-      productCards.forEach(card => {
-        // Reset animation before showing
-        card.style.display = 'none';
-        
-        if (targetCategory === 'all' || card.getAttribute('data-category') === targetCategory) {
-          // Small delay for smooth re-rendering if needed, else just display flex
-          card.style.display = 'flex';
-          card.classList.add('reveal', 'active'); // Re-trigger reveal classes
+        if (entry.isIntersecting) {
+            entry.target.classList.add('reveal');
+            observer.unobserve(entry.target);
         }
-      });
     });
-  });
+}, observerOptions);
+
+document.addEventListener('DOMContentLoaded', () => {
+    // Add reveal class to sections
+    const sections = document.querySelectorAll('section');
+    sections.forEach(section => {
+        section.style.opacity = "0";
+        section.style.transform = "translateY(20px)";
+        section.style.transition = "all 0.6s ease-out";
+        observer.observe(section);
+    });
+
+    // Handle reveal animation logic in JS instead of CSS for simplicity in this demo
+    window.addEventListener('scroll', () => {
+        sections.forEach(section => {
+            const sectionTop = section.getBoundingClientRect().top;
+            if (sectionTop < window.innerHeight - 100) {
+                section.style.opacity = "1";
+                section.style.transform = "translateY(0)";
+            }
+        });
+    });
+
+    // Smooth scroll for anchors
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener('click', function (e) {
+            e.preventDefault();
+            const target = document.querySelector(this.getAttribute('href'));
+            if (target) {
+                target.scrollIntoView({
+                    behavior: 'smooth'
+                });
+            }
+        });
+    });
+
+    // View All Products Toggle
+    const viewAllBtn = document.getElementById('viewAllBtn');
+    const productList = document.getElementById('productList');
+    
+    if (viewAllBtn && productList) {
+        viewAllBtn.addEventListener('click', () => {
+            const hiddenProducts = productList.querySelectorAll('.product-card.hidden');
+            if (hiddenProducts.length > 0) {
+                hiddenProducts.forEach(product => {
+                    product.classList.remove('hidden');
+                    product.style.opacity = "0";
+                    product.style.transform = "translateY(20px)";
+                    setTimeout(() => {
+                        product.style.transition = "all 0.5s ease-out";
+                        product.style.opacity = "1";
+                        product.style.transform = "translateY(0)";
+                    }, 50);
+                });
+                viewAllBtn.textContent = "Show Less";
+            } else {
+                const allProducts = productList.querySelectorAll('.product-card');
+                allProducts.forEach((product, index) => {
+                    if (index >= 6) {
+                        product.classList.add('hidden');
+                    }
+                });
+                viewAllBtn.textContent = "View All Products";
+                // Scroll back to product list top if needed
+                document.getElementById('productList').scrollIntoView({ behavior: 'smooth' });
+            }
+        });
+    }
+
+    // Floating button animation
+    const fab = document.querySelector('.fab-call');
+    if (fab) {
+        setInterval(() => {
+            fab.style.transform = "scale(1.1)";
+            setTimeout(() => {
+                fab.style.transform = "scale(1)";
+            }, 300);
+        }, 3000);
+    }
 });
