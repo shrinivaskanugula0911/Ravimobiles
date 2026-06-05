@@ -450,7 +450,11 @@ function renderProducts() {
             </td>
             <td style="font-weight: 700; color: var(--primary);">${prod.price}</td>
             <td>
-                <span class="status-badge ${prod.status}">${prod.statusText || prod.status}</span>
+                <select class="row-status-select ${prod.status}" onchange="updateProductStatus(${index}, this.value, this)">
+                    <option value="in-stock" ${prod.status === 'in-stock' ? 'selected' : ''}>In Stock</option>
+                    <option value="limited" ${prod.status === 'limited' ? 'selected' : ''}>Limited</option>
+                    <option value="out-of-stock" ${prod.status === 'out-of-stock' ? 'selected' : ''}>Out of Stock</option>
+                </select>
             </td>
             <td>
                 <div class="action-buttons">
@@ -622,4 +626,22 @@ window.moveScrollImage = function(index, direction) {
 
     saveScrollImages();
     renderScrollImages();
+};
+
+window.updateProductStatus = function(index, newStatus, selectElement) {
+    if (index < 0 || index >= products.length) return;
+    
+    products[index].status = newStatus;
+    
+    let statusText = "In Stock";
+    if (newStatus === 'limited') statusText = "Limited";
+    if (newStatus === 'out-of-stock') statusText = "Out of Stock";
+    products[index].statusText = statusText;
+    
+    saveProducts();
+    
+    // Dynamically update class for visual style update
+    selectElement.className = `row-status-select ${newStatus}`;
+    
+    showToast(`"${products[index].name}" availability updated to "${statusText}".`);
 };

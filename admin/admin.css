@@ -471,31 +471,46 @@ select option {
     font-weight: 700;
 }
 
-/* Status Badges */
-.status-badge {
+/* Status Dropdowns */
+.row-status-select {
     display: inline-flex;
     align-items: center;
-    gap: 6px;
     font-size: 11px;
     font-weight: 700;
-    padding: 4px 10px;
+    padding: 6px 12px;
     border-radius: 50px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: var(--transition);
+    border: 1px solid transparent;
+    text-align-last: center;
+    width: 120px;
+}
+
+.row-status-select:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(0, 210, 255, 0.25);
+}
+
+.row-status-select option {
+    background-color: var(--bg-sidebar);
+    color: var(--text-main);
     text-transform: uppercase;
 }
 
-.status-badge.in-stock {
+.row-status-select.in-stock {
     background-color: rgba(46, 125, 50, 0.15);
     color: #4caf50;
     border: 1px solid rgba(76, 175, 80, 0.2);
 }
 
-.status-badge.limited {
+.row-status-select.limited {
     background-color: rgba(239, 108, 0, 0.15);
     color: #ff9800;
     border: 1px solid rgba(255, 152, 0, 0.2);
 }
 
-.status-badge.out-of-stock {
+.row-status-select.out-of-stock {
     background-color: rgba(198, 40, 40, 0.15);
     color: #f44336;
     border: 1px solid rgba(244, 67, 54, 0.2);
