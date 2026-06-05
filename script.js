@@ -89,4 +89,54 @@ document.addEventListener('DOMContentLoaded', () => {
             }, 300);
         }, 3000);
     }
+
+    // Infinite Marquee Scroll
+    const marqueeContent = document.querySelector('.marquee-content');
+    if (marqueeContent) {
+        const originalItems = Array.from(marqueeContent.children);
+        if (originalItems.length > 0) {
+            const initMarquee = () => {
+                // Measure sizes while currently rendered items are in DOM
+                const firstChild = marqueeContent.querySelector('.photo-item');
+                const itemWidth = (firstChild && firstChild.getBoundingClientRect().width) || 320;
+                const gap = parseFloat(window.getComputedStyle(marqueeContent).gap) || 20;
+                const singleItemSpace = itemWidth + gap;
+                const screenWidth = window.innerWidth;
+                
+                // Clear container
+                marqueeContent.innerHTML = '';
+                
+                // Calculate minimum items needed to exceed screen width
+                const minItemsNeeded = Math.ceil(screenWidth / singleItemSpace) + 1;
+                const repeatCount = Math.ceil(minItemsNeeded / originalItems.length);
+                
+                // Create base sequence of cloned items
+                const baseSet = [];
+                for (let i = 0; i < repeatCount; i++) {
+                    originalItems.forEach(item => {
+                        baseSet.push(item.cloneNode(true));
+                    });
+                }
+                
+                // Append base set
+                baseSet.forEach(item => {
+                    marqueeContent.appendChild(item);
+                });
+                
+                // Append duplicate set for seamless looping
+                baseSet.forEach(item => {
+                    marqueeContent.appendChild(item.cloneNode(true));
+                });
+            };
+            
+            initMarquee();
+            
+            // Re-initialize marquee on window resize (debounced)
+            let resizeTimeout;
+            window.addEventListener('resize', () => {
+                clearTimeout(resizeTimeout);
+                resizeTimeout = setTimeout(initMarquee, 250);
+            });
+        }
+    }
 });
