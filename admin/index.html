@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ravi Mobiles | Admin Panel</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="admin.css">
+</head>
+<body>
+    <div class="admin-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="logo-area">
+                <div class="logo-icon">
+                    <i class="fa-solid fa-user-gear"></i>
+                </div>
+                <div class="logo-text">
+                    <h1>Ravi Mobiles</h1>
+                    <p>ADMIN DASHBOARD</p>
+                </div>
+            </div>
+            <nav class="nav-menu">
+                <button class="nav-btn active" data-tab="products">
+                    <i class="fa-solid fa-mobile-screen-button"></i> Available Mobiles
+                </button>
+                <button class="nav-btn" data-tab="scroll">
+                    <i class="fa-solid fa-images"></i> Scroll Images
+                </button>
+            </nav>
+            <div class="sidebar-footer">
+                <a href="../index.html" class="btn btn-secondary">
+                    <i class="fa-solid fa-arrow-up-right-from-square"></i> View Website
+                </a>
+                <button id="resetBtn" class="btn btn-danger">
+                    <i class="fa-solid fa-rotate-left"></i> Reset to Defaults
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Header -->
+            <header class="main-header">
+                <div class="header-title">
+                    <h2 id="currentTabTitle">Available Mobiles Manager</h2>
+                    <p id="currentTabDesc">Add, edit, remove, and reorder products shown in the Available Mobiles section.</p>
+                </div>
+            </header>
+
+            <!-- Tab Content: Products -->
+            <section id="tab-products" class="tab-content active">
+                <div class="dashboard-grid">
+                    <!-- Form Card -->
+                    <div class="card form-card">
+                        <h3 id="formTitle">Add New Product</h3>
+                        <form id="productForm">
+                            <input type="hidden" id="editIndex" value="-1">
+                            
+                            <div class="form-group">
+                                <label for="prodName">Product Name</label>
+                                <input type="text" id="prodName" required placeholder="e.g. iPhone 15 Pro">
+                            </div>
+
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="prodPrice">Price</label>
+                                    <input type="text" id="prodPrice" required placeholder="e.g. ₹79,999">
+                                </div>
+                                <div class="form-group">
+                                    <label for="prodBrand">Brand</label>
+                                    <select id="prodBrand" required>
+                                        <option value="APPLE">APPLE</option>
+                                        <option value="SAMSUNG">SAMSUNG</option>
+                                        <option value="VIVO">VIVO</option>
+                                        <option value="REDMI">REDMI</option>
+                                        <option value="BOAT">BOAT</option>
+                                        <option value="VARNI">VARNI</option>
+                                        <option value="FIT TICK">FIT TICK</option>
+                                        <option value="FireBoult">FireBoult</option>
+                                        <option value="ONEPLUS">ONEPLUS</option>
+                                        <option value="REALME">REALME</option>
+                                        <option value="OPPO">OPPO</option>
+                                        <option value="OTHER">OTHER (Custom)</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="form-group" id="customBrandGroup" style="display: none; margin-bottom: 15px;">
+                                <label for="prodBrandCustom">Custom Brand Name</label>
+                                <input type="text" id="prodBrandCustom" placeholder="Enter custom brand">
+                            </div>
+
+                            <div class="form-group">
+                                <label for="prodStatus">Stock Status</label>
+                                <select id="prodStatus" required>
+                                    <option value="in-stock">In Stock</option>
+                                    <option value="limited">Limited Stock</option>
+                                    <option value="out-of-stock">Out of Stock</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="prodImage">Select Product Image</label>
+                                <div class="image-select-wrapper">
+                                    <select id="prodImage" required>
+                                        <!-- Populated dynamically via admin.js -->
+                                    </select>
+                                    <div class="custom-image-input-row">
+                                        <span class="or-separator">or enter custom filename:</span>
+                                        <input type="text" id="prodImageCustom" placeholder="e.g. images/myImage.jpg">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Image Preview -->
+                            <div class="image-preview-container">
+                                <span class="preview-label">Image Preview:</span>
+                                <div class="image-preview" id="productImagePreview">
+                                    <div class="no-image">No Image Selected</div>
+                                </div>
+                            </div>
+
+                            <div class="form-actions">
+                                <button type="submit" id="saveProdBtn" class="btn btn-primary">
+                                    <i class="fa-solid fa-plus"></i> Add Product
+                                </button>
+                                <button type="button" id="cancelEditBtn" class="btn btn-secondary" style="display: none;">
+                                    Cancel Edit
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- List Card -->
+                    <div class="card list-card">
+                        <div class="card-header">
+                            <h3>Current Products</h3>
+                            <span class="badge" id="productCount">0 Products</span>
+                        </div>
+                        <div class="table-wrapper">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th style="width: 50px;">Order</th>
+                                        <th style="width: 70px;">Image</th>
+                                        <th>Product Details</th>
+                                        <th>Brand</th>
+                                        <th>Price</th>
+                                        <th>Status</th>
+                                        <th style="width: 120px; text-align: center;">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="productTableBody">
+                                    <!-- Populated dynamically via admin.js -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Tab Content: Scroll Images -->
+            <section id="tab-scroll" class="tab-content">
+                <div class="dashboard-grid">
+                    <!-- Form Card -->
+                    <div class="card form-card">
+                        <h3>Add Scroll Image</h3>
+                        <form id="scrollForm">
+                            <div class="form-group">
+                                <label for="scrollImageSelect">Select Image</label>
+                                <div class="image-select-wrapper">
+                                    <select id="scrollImageSelect" required>
+                                        <!-- Populated dynamically via admin.js -->
+                                    </select>
+                                    <div class="custom-image-input-row">
+                                        <span class="or-separator">or enter custom filename:</span>
+                                        <input type="text" id="scrollImageCustom" placeholder="e.g. images/myScroll.jpg">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Image Preview -->
+                            <div class="image-preview-container">
+                                <span class="preview-label">Image Preview:</span>
+                                <div class="image-preview" id="scrollImagePreview">
+                                    <div class="no-image">No Image Selected</div>
+                                </div>
+                            </div>
+
+                            <div class="form-actions">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fa-solid fa-plus"></i> Add to Marquee
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- List Card -->
+                    <div class="card list-card">
+                        <div class="card-header">
+                            <h3>Active Scroll Images</h3>
+                            <span class="badge" id="scrollCount">0 Images</span>
+                        </div>
+                        <div class="scroll-images-grid" id="scrollImagesGrid">
+                            <!-- Populated dynamically via admin.js -->
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Notification system -->
+    <div id="toastContainer" class="toast-container"></div>
+
+    <script src="admin.js"></script>
+</body>
+</html>

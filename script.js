@@ -12,7 +12,155 @@ const observer = new IntersectionObserver((entries) => {
     });
 }, observerOptions);
 
+// Default site data if localStorage is empty
+const defaultProducts = [
+    {
+        name: "Vivo Y19s",
+        image: "images/vivoMobile.jpeg",
+        status: "in-stock",
+        statusText: "In Stock",
+        price: "₹10,999",
+        brand: "VIVO"
+    },
+    {
+        name: "Redmi Note 11",
+        image: "images/redmiMobile.jpeg",
+        status: "limited",
+        statusText: "Limited",
+        price: "₹11,999",
+        brand: "REDMI"
+    },
+    {
+        name: "iPhone 12",
+        image: "images/iphone.jpeg",
+        status: "in-stock",
+        statusText: "In Stock",
+        price: "₹24,999",
+        brand: "APPLE"
+    },
+    {
+        name: "Boat Storm Call 3",
+        image: "images/boatWatch.jpeg",
+        status: "in-stock",
+        statusText: "In Stock",
+        price: "₹1,499",
+        brand: "BOAT"
+    },
+    {
+        name: "VARNI Earbuds",
+        image: "images/varniBuds.jpeg",
+        status: "in-stock",
+        statusText: "In Stock",
+        price: "₹999",
+        brand: "VARNI"
+    },
+    {
+        name: "Fit Tick Smart Watch",
+        image: "images/fittickSmartWatch.jpeg",
+        status: "in-stock",
+        statusText: "In Stock",
+        price: "₹1,499",
+        brand: "FIT TICK"
+    },
+    {
+        name: "BoAt Sound Bar",
+        image: "images/boatSpeaker.jpeg",
+        status: "in-stock",
+        statusText: "In Stock",
+        price: "₹1,999",
+        brand: "BOAT"
+    },
+    {
+        name: "FireBoult Smart Watch",
+        image: "images/smartWatch.jpeg",
+        status: "limited",
+        statusText: "Limited",
+        price: "₹1,399",
+        brand: "FireBoult"
+    }
+];
+
+const defaultScrollImages = [
+    "images/showroom_1.png",
+    "images/showroom_2.png"
+];
+
 document.addEventListener('DOMContentLoaded', () => {
+    // 1. Fetch & Initialize Data from LocalStorage
+    let products = JSON.parse(localStorage.getItem('ravi_mobiles_products'));
+    if (!products) {
+        products = defaultProducts;
+        localStorage.setItem('ravi_mobiles_products', JSON.stringify(products));
+    }
+
+    let scrollImages = JSON.parse(localStorage.getItem('ravi_mobiles_scroll_images'));
+    if (!scrollImages) {
+        scrollImages = defaultScrollImages;
+        localStorage.setItem('ravi_mobiles_scroll_images', JSON.stringify(scrollImages));
+    }
+
+    // 2. Render Products
+    const productList = document.getElementById('productList');
+    const viewAllBtn = document.getElementById('viewAllBtn');
+
+    if (productList) {
+        productList.innerHTML = '';
+        products.forEach((product, index) => {
+            const card = document.createElement('div');
+            card.className = `product-card${index >= 6 ? ' hidden' : ''}`;
+            
+            let statusIcon = 'fa-circle-check';
+            if (product.status === 'limited') {
+                statusIcon = 'fa-circle-exclamation';
+            } else if (product.status === 'out-of-stock') {
+                statusIcon = 'fa-circle-xmark';
+            }
+
+            card.innerHTML = `
+                <div class="product-image">
+                    <img src="${product.image}" alt="${product.name}">
+                </div>
+                <div class="product-details">
+                    <div class="product-top">
+                        <h3>${product.name}</h3>
+                        <div class="stock-status ${product.status}">
+                            <i class="fa-solid ${statusIcon}"></i> ${product.statusText || (product.status === 'in-stock' ? 'In Stock' : product.status === 'limited' ? 'Limited' : 'Out of Stock')}
+                        </div>
+                    </div>
+                    <div class="price">${product.price}</div>
+                    <div class="product-footer">
+                        <div class="brand">
+                            <span>${product.brand}</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+            productList.appendChild(card);
+        });
+
+        // Toggle button visibility based on product count
+        if (viewAllBtn) {
+            if (products.length <= 6) {
+                viewAllBtn.style.display = 'none';
+            } else {
+                viewAllBtn.style.display = 'block';
+                viewAllBtn.textContent = 'View All Products';
+            }
+        }
+    }
+
+    // 3. Render Scroll Images
+    const marqueeContent = document.querySelector('.marquee-content');
+    if (marqueeContent) {
+        marqueeContent.innerHTML = '';
+        scrollImages.forEach((imgSrc, index) => {
+            const item = document.createElement('div');
+            item.className = 'photo-item';
+            item.innerHTML = `<img src="${imgSrc}" alt="Showroom ${index + 1}">`;
+            marqueeContent.appendChild(item);
+        });
+    }
+
     // Add reveal class to sections
     const sections = document.querySelectorAll('section');
     sections.forEach(section => {
@@ -47,9 +195,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // View All Products Toggle
-    const viewAllBtn = document.getElementById('viewAllBtn');
-    const productList = document.getElementById('productList');
-    
     if (viewAllBtn && productList) {
         viewAllBtn.addEventListener('click', () => {
             const hiddenProducts = productList.querySelectorAll('.product-card.hidden');
@@ -73,7 +218,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 });
                 viewAllBtn.textContent = "View All Products";
-                // Scroll back to product list top if needed
                 document.getElementById('productList').scrollIntoView({ behavior: 'smooth' });
             }
         });
@@ -91,26 +235,21 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Infinite Marquee Scroll
-    const marqueeContent = document.querySelector('.marquee-content');
     if (marqueeContent) {
         const originalItems = Array.from(marqueeContent.children);
         if (originalItems.length > 0) {
             const initMarquee = () => {
-                // Measure sizes while currently rendered items are in DOM
                 const firstChild = marqueeContent.querySelector('.photo-item');
                 const itemWidth = (firstChild && firstChild.getBoundingClientRect().width) || 320;
                 const gap = parseFloat(window.getComputedStyle(marqueeContent).gap) || 20;
                 const singleItemSpace = itemWidth + gap;
                 const screenWidth = window.innerWidth;
                 
-                // Clear container
                 marqueeContent.innerHTML = '';
                 
-                // Calculate minimum items needed to exceed screen width
                 const minItemsNeeded = Math.ceil(screenWidth / singleItemSpace) + 1;
                 const repeatCount = Math.ceil(minItemsNeeded / originalItems.length);
                 
-                // Create base sequence of cloned items
                 const baseSet = [];
                 for (let i = 0; i < repeatCount; i++) {
                     originalItems.forEach(item => {
@@ -118,12 +257,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     });
                 }
                 
-                // Append base set
                 baseSet.forEach(item => {
                     marqueeContent.appendChild(item);
                 });
                 
-                // Append duplicate set for seamless looping
                 baseSet.forEach(item => {
                     marqueeContent.appendChild(item.cloneNode(true));
                 });
@@ -131,7 +268,6 @@ document.addEventListener('DOMContentLoaded', () => {
             
             initMarquee();
             
-            // Re-initialize marquee on window resize (debounced)
             let resizeTimeout;
             window.addEventListener('resize', () => {
                 clearTimeout(resizeTimeout);
