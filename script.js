@@ -1,4 +1,27 @@
+const SUPABASE_URL = "https://ajvvmvnwapqeivkbfdfj.supabase.co";
+const SUPABASE_KEY = "sb_secret_JgrKnwB1GN2-IzWwphfOgA_94ienRq_";
 
+async function fetchSupabaseData() {
+    try {
+        const response = await fetch(`${SUPABASE_URL}/rest/v1/ravi_mobiles_config?select=key,value`, {
+            headers: {
+                "apikey": SUPABASE_KEY,
+                "Authorization": `Bearer ${SUPABASE_KEY}`
+            }
+        });
+        if (!response.ok) throw new Error("Supabase request failed");
+        const data = await response.json();
+        
+        const config = {};
+        data.forEach(item => {
+            config[item.key] = item.value;
+        });
+        return config;
+    } catch (err) {
+        console.error("Error fetching from Supabase:", err);
+        return null;
+    }
+}
 
 // Default site data if localStorage is empty
 const defaultProducts = [
@@ -73,18 +96,19 @@ const defaultScrollImages = [
     "images/showroom_2.png"
 ];
 
-document.addEventListener('DOMContentLoaded', () => {
-    // 1. Fetch & Initialize Data from LocalStorage
-    let products = JSON.parse(localStorage.getItem('ravi_mobiles_products'));
-    if (!products) {
-        products = defaultProducts;
-        localStorage.setItem('ravi_mobiles_products', JSON.stringify(products));
-    }
+document.addEventListener('DOMContentLoaded', async () => {
+    // 1. Fetch & Initialize Data from Supabase
+    let products = [...defaultProducts];
+    let scrollImages = [...defaultScrollImages];
 
-    let scrollImages = JSON.parse(localStorage.getItem('ravi_mobiles_scroll_images'));
-    if (!scrollImages) {
-        scrollImages = defaultScrollImages;
-        localStorage.setItem('ravi_mobiles_scroll_images', JSON.stringify(scrollImages));
+    const cloudData = await fetchSupabaseData();
+    if (cloudData) {
+        if (cloudData.products) {
+            products = cloudData.products;
+        }
+        if (cloudData.scroll_images) {
+            scrollImages = cloudData.scroll_images;
+        }
     }
 
     // 2. Render Products

@@ -1,3 +1,48 @@
+const SUPABASE_URL = "https://ajvvmvnwapqeivkbfdfj.supabase.co";
+const SUPABASE_KEY = "sb_secret_JgrKnwB1GN2-IzWwphfOgA_94ienRq_";
+
+async function fetchSupabaseData() {
+    try {
+        const response = await fetch(`${SUPABASE_URL}/rest/v1/ravi_mobiles_config?select=key,value`, {
+            headers: {
+                "apikey": SUPABASE_KEY,
+                "Authorization": `Bearer ${SUPABASE_KEY}`
+            }
+        });
+        if (!response.ok) throw new Error("Supabase request failed");
+        const data = await response.json();
+        
+        const config = {};
+        data.forEach(item => {
+            config[item.key] = item.value;
+        });
+        return config;
+    } catch (err) {
+        console.error("Error fetching from Supabase:", err);
+        return null;
+    }
+}
+
+async function saveToSupabase(key, value) {
+    try {
+        const response = await fetch(`${SUPABASE_URL}/rest/v1/ravi_mobiles_config`, {
+            method: 'POST',
+            headers: {
+                "apikey": SUPABASE_KEY,
+                "Authorization": `Bearer ${SUPABASE_KEY}`,
+                "Content-Type": "application/json",
+                "Prefer": "resolution=merge-duplicates"
+            },
+            body: JSON.stringify({ key: key, value: value })
+        });
+        if (!response.ok) throw new Error("Supabase update failed");
+        return true;
+    } catch (err) {
+        console.error(`Error saving ${key} to Supabase:`, err);
+        return false;
+    }
+}
+
 // Image lists already uploaded in the images folder
 const availableImages = [
     "images/boatSpeaker.jpeg",
@@ -94,9 +139,15 @@ const defaultScrollImages = [
 let products = [];
 let scrollImages = [];
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
+    // Show loading state
+    const tbody = document.getElementById('productTableBody');
+    if (tbody) {
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--text-muted); font-style: italic;"><i class="fa-solid fa-spinner fa-spin"></i> Loading data from Supabase Cloud...</td></tr>`;
+    }
+
     // Initialize Data
-    initData();
+    await initData();
 
     // Tab Navigation
     initTabs();
@@ -141,18 +192,25 @@ function showToast(message, type = 'success') {
     }, 3000);
 }
 
-// Fetch from localStorage or use defaults
-function initData() {
-    products = JSON.parse(localStorage.getItem('ravi_mobiles_products'));
-    if (!products || products.length === 0) {
-        products = [...defaultProducts];
-        localStorage.setItem('ravi_mobiles_products', JSON.stringify(products));
+// Fetch from Supabase (fallback to defaults if offline/empty)
+async function initData() {
+    let cloudData = await fetchSupabaseData();
+    
+    // Seed Supabase with defaults if empty
+    if (cloudData && Object.keys(cloudData).length === 0) {
+        showToast("Database is empty. Seeding default data to Supabase...", "info");
+        await saveToSupabase('products', defaultProducts);
+        await saveToSupabase('scroll_images', defaultScrollImages);
+        cloudData = { products: defaultProducts, scroll_images: defaultScrollImages };
     }
 
-    scrollImages = JSON.parse(localStorage.getItem('ravi_mobiles_scroll_images'));
-    if (!scrollImages || scrollImages.length === 0) {
+    if (cloudData) {
+        products = cloudData.products || [...defaultProducts];
+        scrollImages = cloudData.scroll_images || [...defaultScrollImages];
+    } else {
+        products = [...defaultProducts];
         scrollImages = [...defaultScrollImages];
-        localStorage.setItem('ravi_mobiles_scroll_images', JSON.stringify(scrollImages));
+        showToast("Failed to load from Cloud database. Using defaults.", "error");
     }
 }
 
@@ -377,31 +435,42 @@ function initScrollForm() {
 function initGlobalActions() {
     const resetBtn = document.getElementById('resetBtn');
 
-    resetBtn.addEventListener('click', () => {
+    resetBtn.addEventListener('click', async () => {
         if (confirm("Are you sure you want to reset all products and marquee images to their defaults? Any modifications will be lost.")) {
             products = [...defaultProducts];
             scrollImages = [...defaultScrollImages];
             
-            saveProducts();
-            saveScrollImages();
+            showToast("Resetting cloud database...", "info");
+            
+            const pSuccess = await saveToSupabase('products', products);
+            const sSuccess = await saveToSupabase('scroll_images', scrollImages);
             
             renderProducts();
             renderScrollImages();
-            
             resetProductForm();
             
-            showToast("System reset to default data.", "success");
+            if (pSuccess && sSuccess) {
+                showToast("System reset to default data in the cloud.", "success");
+            } else {
+                showToast("Failed to reset cloud database.", "error");
+            }
         }
     });
 }
 
 // Save helpers
-function saveProducts() {
-    localStorage.setItem('ravi_mobiles_products', JSON.stringify(products));
+async function saveProducts() {
+    const success = await saveToSupabase('products', products);
+    if (!success) {
+        showToast("Failed to save to Supabase Cloud.", "error");
+    }
 }
 
-function saveScrollImages() {
-    localStorage.setItem('ravi_mobiles_scroll_images', JSON.stringify(scrollImages));
+async function saveScrollImages() {
+    const success = await saveToSupabase('scroll_images', scrollImages);
+    if (!success) {
+        showToast("Failed to save to Supabase Cloud.", "error");
+    }
 }
 
 // Render product list table
