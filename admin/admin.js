@@ -76,6 +76,34 @@ async function uploadImageToSupabase(file) {
     }
 }
 
+async function fetchStorageImages() {
+    try {
+        const response = await fetch(`${SUPABASE_URL}/storage/v1/object/list/images`, {
+            method: 'POST',
+            headers: {
+                "apikey": SUPABASE_KEY,
+                "Authorization": `Bearer ${SUPABASE_KEY}`,
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                limit: 100,
+                offset: 0,
+                sortBy: { column: 'name', order: 'asc' }
+            })
+        });
+        
+        if (!response.ok) throw new Error("Failed to fetch storage file list");
+        
+        const files = await response.json();
+        return files
+            .filter(f => f.id)
+            .map(f => `${SUPABASE_URL}/storage/v1/object/public/images/${f.name}`);
+    } catch (err) {
+        console.error("Error fetching storage list:", err);
+        return [];
+    }
+}
+
 // Image lists already uploaded in the images folder
 const availableImages = [
     "images/boatSpeaker.jpeg",
@@ -185,8 +213,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Tab Navigation
     initTabs();
 
+    // Fetch storage images dynamically from Supabase Storage bucket
+    const storageImages = await fetchStorageImages();
+
     // Dropdown populating
-    populateImageDropdowns();
+    populateImageDropdowns(storageImages);
 
     // Setup forms & event listeners
     initProductForm();
@@ -285,14 +316,23 @@ function initTabs() {
 }
 
 // Populate Image Select elements
-function populateImageDropdowns() {
+function populateImageDropdowns(storageImages = []) {
     const prodImageSelect = document.getElementById('prodImage');
     const scrollImageSelect = document.getElementById('scrollImageSelect');
 
     let optionsHTML = '<option value="">-- Choose an Image --</option>';
+    
+    // Add Supabase Storage bucket images first
+    storageImages.forEach(url => {
+        const fileName = url.substring(url.lastIndexOf('/') + 1);
+        const cleanName = fileName.replace(/^\d+_/, '');
+        optionsHTML += `<option value="${url}">[Cloud] ${cleanName}</option>`;
+    });
+
+    // Add local repository fallback images
     availableImages.forEach(img => {
         const displayName = img.replace('images/', '');
-        optionsHTML += `<option value="${img}">${displayName}</option>`;
+        optionsHTML += `<option value="${img}">[Local] ${displayName}</option>`;
     });
 
     if (prodImageSelect) prodImageSelect.innerHTML = optionsHTML;
@@ -400,6 +440,9 @@ function initProductForm() {
                 return; // Upload failed, toast already shown by upload function
             }
             image = uploadedUrl;
+            
+            // Re-fetch storage images to update the dropdown list dynamically
+            fetchStorageImages().then(updatedImages => populateImageDropdowns(updatedImages));
         } else {
             image = customImgVal !== "" ? customImgVal : selectedImgVal;
         }
@@ -519,6 +562,9 @@ function initScrollForm() {
                 return;
             }
             image = uploadedUrl;
+            
+            // Re-fetch storage images to update the dropdown list dynamically
+            fetchStorageImages().then(updatedImages => populateImageDropdowns(updatedImages));
         } else {
             image = customImgVal !== "" ? customImgVal : selectedImgVal;
         }
