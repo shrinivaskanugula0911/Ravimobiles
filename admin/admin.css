@@ -718,3 +718,36 @@ select option {
         padding: 20px;
     }
 }
+
+/* Glassmorphic File Upload Input */
+.file-input {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px dashed rgba(255, 255, 255, 0.15);
+    padding: 8px 12px;
+    border-radius: 8px;
+    color: var(--text-light);
+    width: 100%;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 13px;
+    font-family: inherit;
+}
+.file-input:hover {
+    border-color: var(--primary-color);
+    background: rgba(255, 255, 255, 0.08);
+}
+.file-input::file-selector-button {
+    background: var(--primary-color);
+    color: var(--text-light);
+    border: none;
+    padding: 4px 10px;
+    border-radius: 4px;
+    margin-right: 10px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 11px;
+    transition: all 0.2s ease;
+}
+.file-input::file-selector-button:hover {
+    background: var(--primary-hover);
+}

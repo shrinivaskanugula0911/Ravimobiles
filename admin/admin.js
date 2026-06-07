@@ -43,6 +43,36 @@ async function saveToSupabase(key, value) {
     }
 }
 
+async function uploadImageToSupabase(file) {
+    // Sanitize filename to avoid weird character issues
+    const cleanName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
+    const filePath = `${Date.now()}_${cleanName}`;
+    
+    try {
+        const response = await fetch(`${SUPABASE_URL}/storage/v1/object/images/${filePath}`, {
+            method: 'POST',
+            headers: {
+                "apikey": SUPABASE_KEY,
+                "Authorization": `Bearer ${SUPABASE_KEY}`,
+                "Content-Type": file.type
+            },
+            body: file
+        });
+        
+        if (!response.ok) {
+            const errText = await response.text();
+            throw new Error(`Upload failed: ${errText}`);
+        }
+        
+        // Return the public URL
+        return `${SUPABASE_URL}/storage/v1/object/public/images/${filePath}`;
+    } catch (err) {
+        console.error("Storage upload error:", err);
+        showToast("Error uploading file to storage.", "error");
+        return null;
+    }
+}
+
 // Image lists already uploaded in the images folder
 const availableImages = [
     "images/boatSpeaker.jpeg",
@@ -273,6 +303,7 @@ function initProductForm() {
     const customBrandGroup = document.getElementById('customBrandGroup');
     const customBrandInput = document.getElementById('prodBrandCustom');
     const imageSelect = document.getElementById('prodImage');
+    const fileInput = document.getElementById('prodImageFile');
     const customImageInput = document.getElementById('prodImageCustom');
     const imagePreview = document.getElementById('productImagePreview');
     const editIndexInput = document.getElementById('editIndex');
@@ -295,23 +326,40 @@ function initProductForm() {
     function updatePreview() {
         const customImgVal = customImageInput.value.trim();
         const selectedImgVal = imageSelect.value;
-        const imgPath = customImgVal !== "" ? customImgVal : selectedImgVal;
 
-        if (imgPath) {
+        if (fileInput && fileInput.files && fileInput.files[0]) {
+            const file = fileInput.files[0];
+            const localUrl = URL.createObjectURL(file);
+            imagePreview.innerHTML = `<img src="${localUrl}" alt="Preview">`;
+        } else if (customImgVal !== "") {
             // Because admin is inside a folder, we prefix '../' to the path to load from root level images folder
-            const displayPath = imgPath.startsWith('images/') ? '../' + imgPath : imgPath;
+            const displayPath = customImgVal.startsWith('images/') ? '../' + customImgVal : customImgVal;
+            imagePreview.innerHTML = `<img src="${displayPath}" alt="Preview" onerror="this.src='../images/logo.png';">`;
+        } else if (selectedImgVal) {
+            const displayPath = selectedImgVal.startsWith('images/') ? '../' + selectedImgVal : selectedImgVal;
             imagePreview.innerHTML = `<img src="${displayPath}" alt="Preview" onerror="this.src='../images/logo.png';">`;
         } else {
             imagePreview.innerHTML = '<div class="no-image">No Image Selected</div>';
         }
     }
 
+    fileInput.addEventListener('change', () => {
+        if (fileInput.files.length > 0) {
+            imageSelect.value = '';
+            customImageInput.value = '';
+        }
+        updatePreview();
+    });
+
     imageSelect.addEventListener('change', () => {
-        customImageInput.value = ''; // clear custom if select changes
+        customImageInput.value = '';
+        fileInput.value = '';
         updatePreview();
     });
 
     customImageInput.addEventListener('input', () => {
+        imageSelect.value = '';
+        fileInput.value = '';
         updatePreview();
     });
 
@@ -321,7 +369,7 @@ function initProductForm() {
     });
 
     // Submit form
-    form.addEventListener('submit', (e) => {
+    form.addEventListener('submit', async (e) => {
         e.preventDefault();
 
         const name = document.getElementById('prodName').value.trim();
@@ -332,10 +380,29 @@ function initProductForm() {
 
         const customImgVal = customImageInput.value.trim();
         const selectedImgVal = imageSelect.value;
-        const image = customImgVal !== "" ? customImgVal : selectedImgVal;
+        
+        let image = "";
+
+        if (fileInput && fileInput.files && fileInput.files[0]) {
+            // Disable button and show uploading state
+            saveProdBtn.disabled = true;
+            saveProdBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Uploading Image...';
+            
+            const uploadedUrl = await uploadImageToSupabase(fileInput.files[0]);
+            
+            saveProdBtn.disabled = false;
+            saveProdBtn.innerHTML = editIndex === -1 ? '<i class="fa-solid fa-plus"></i> Add Product' : '<i class="fa-solid fa-check"></i> Save Changes';
+            
+            if (!uploadedUrl) {
+                return; // Upload failed, toast already shown by upload function
+            }
+            image = uploadedUrl;
+        } else {
+            image = customImgVal !== "" ? customImgVal : selectedImgVal;
+        }
 
         if (!image) {
-            showToast("Please select an image or enter a custom path.", "error");
+            showToast("Please select, upload, or enter a custom path for the image.", "error");
             return;
         }
 
@@ -357,7 +424,7 @@ function initProductForm() {
         }
 
         // Save & Render
-        saveProducts();
+        await saveProducts();
         renderProducts();
         resetProductForm();
     });
@@ -373,6 +440,9 @@ function resetProductForm() {
     document.getElementById('productImagePreview').innerHTML = '<div class="no-image">No Image Selected</div>';
     document.getElementById('cancelEditBtn').style.display = 'none';
     
+    const fileInput = document.getElementById('prodImageFile');
+    if (fileInput) fileInput.value = '';
+    
     const saveProdBtn = document.getElementById('saveProdBtn');
     saveProdBtn.innerHTML = '<i class="fa-solid fa-plus"></i> Add Product';
     document.getElementById('formTitle').textContent = "Add New Product";
@@ -382,50 +452,87 @@ function resetProductForm() {
 function initScrollForm() {
     const form = document.getElementById('scrollForm');
     const imageSelect = document.getElementById('scrollImageSelect');
+    const fileInput = document.getElementById('scrollImageFile');
     const customImageInput = document.getElementById('scrollImageCustom');
     const imagePreview = document.getElementById('scrollImagePreview');
+    const submitBtn = form.querySelector('button[type="submit"]');
 
     function updatePreview() {
         const customImgVal = customImageInput.value.trim();
         const selectedImgVal = imageSelect.value;
-        const imgPath = customImgVal !== "" ? customImgVal : selectedImgVal;
 
-        if (imgPath) {
-            const displayPath = imgPath.startsWith('images/') ? '../' + imgPath : imgPath;
+        if (fileInput && fileInput.files && fileInput.files[0]) {
+            const file = fileInput.files[0];
+            const localUrl = URL.createObjectURL(file);
+            imagePreview.innerHTML = `<img src="${localUrl}" alt="Preview">`;
+        } else if (customImgVal !== "") {
+            const displayPath = customImgVal.startsWith('images/') ? '../' + customImgVal : customImgVal;
+            imagePreview.innerHTML = `<img src="${displayPath}" alt="Preview" onerror="this.src='../images/logo.png';">`;
+        } else if (selectedImgVal) {
+            const displayPath = selectedImgVal.startsWith('images/') ? '../' + selectedImgVal : selectedImgVal;
             imagePreview.innerHTML = `<img src="${displayPath}" alt="Preview" onerror="this.src='../images/logo.png';">`;
         } else {
             imagePreview.innerHTML = '<div class="no-image">No Image Selected</div>';
         }
     }
 
+    fileInput.addEventListener('change', () => {
+        if (fileInput.files.length > 0) {
+            imageSelect.value = '';
+            customImageInput.value = '';
+        }
+        updatePreview();
+    });
+
     imageSelect.addEventListener('change', () => {
         customImageInput.value = '';
+        fileInput.value = '';
         updatePreview();
     });
 
     customImageInput.addEventListener('input', () => {
+        imageSelect.value = '';
+        fileInput.value = '';
         updatePreview();
     });
 
-    form.addEventListener('submit', (e) => {
+    form.addEventListener('submit', async (e) => {
         e.preventDefault();
 
         const customImgVal = customImageInput.value.trim();
         const selectedImgVal = imageSelect.value;
-        const image = customImgVal !== "" ? customImgVal : selectedImgVal;
+        let image = "";
+
+        if (fileInput && fileInput.files && fileInput.files[0]) {
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Uploading...';
+
+            const uploadedUrl = await uploadImageToSupabase(fileInput.files[0]);
+
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<i class="fa-solid fa-plus"></i> Add to Marquee';
+
+            if (!uploadedUrl) {
+                return;
+            }
+            image = uploadedUrl;
+        } else {
+            image = customImgVal !== "" ? customImgVal : selectedImgVal;
+        }
 
         if (!image) {
-            showToast("Please select an image or enter a custom path.", "error");
+            showToast("Please select, upload, or enter a custom path for the image.", "error");
             return;
         }
 
         // Add to scroll list
         scrollImages.push(image);
-        saveScrollImages();
+        await saveScrollImages();
         renderScrollImages();
 
         // Reset
         form.reset();
+        fileInput.value = '';
         imagePreview.innerHTML = '<div class="no-image">No Image Selected</div>';
         showToast("Image added to marquee scroll!");
     });
@@ -618,6 +725,8 @@ window.editProduct = function(index) {
     // Handle image selection
     const imageSelect = document.getElementById('prodImage');
     const customImageInput = document.getElementById('prodImageCustom');
+    const fileInput = document.getElementById('prodImageFile');
+    if (fileInput) fileInput.value = ''; // Clear file input on edit
     
     if (availableImages.includes(prod.image)) {
         imageSelect.value = prod.image;

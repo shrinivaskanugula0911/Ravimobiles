@@ -108,11 +108,15 @@
                             <div class="form-group">
                                 <label for="prodImage">Select Product Image</label>
                                 <div class="image-select-wrapper">
-                                    <select id="prodImage" required>
+                                    <select id="prodImage">
                                         <!-- Populated dynamically via admin.js -->
                                     </select>
                                     <div class="custom-image-input-row">
-                                        <span class="or-separator">or enter custom filename:</span>
+                                        <span class="or-separator">or upload from device:</span>
+                                        <input type="file" id="prodImageFile" accept="image/*" class="file-input">
+                                    </div>
+                                    <div class="custom-image-input-row">
+                                        <span class="or-separator">or enter custom URL/filename:</span>
                                         <input type="text" id="prodImageCustom" placeholder="e.g. images/myImage.jpg">
                                     </div>
                                 </div>
@@ -175,11 +179,15 @@
                             <div class="form-group">
                                 <label for="scrollImageSelect">Select Image</label>
                                 <div class="image-select-wrapper">
-                                    <select id="scrollImageSelect" required>
+                                    <select id="scrollImageSelect">
                                         <!-- Populated dynamically via admin.js -->
                                     </select>
                                     <div class="custom-image-input-row">
-                                        <span class="or-separator">or enter custom filename:</span>
+                                        <span class="or-separator">or upload from device:</span>
+                                        <input type="file" id="scrollImageFile" accept="image/*" class="file-input">
+                                    </div>
+                                    <div class="custom-image-input-row">
+                                        <span class="or-separator">or enter custom URL/filename:</span>
                                         <input type="text" id="scrollImageCustom" placeholder="e.g. images/myScroll.jpg">
                                     </div>
                                 </div>
