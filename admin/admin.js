@@ -353,6 +353,38 @@ function initProductForm() {
     const cancelEditBtn = document.getElementById('cancelEditBtn');
     const saveProdBtn = document.getElementById('saveProdBtn');
     const formTitle = document.getElementById('formTitle');
+    const priceInput = document.getElementById('prodPrice');
+
+    if (priceInput) {
+        priceInput.addEventListener('input', (e) => {
+            let value = e.target.value;
+            // Extract digits only
+            let digits = value.replace(/\D/g, '');
+            if (digits === '') {
+                e.target.value = '₹';
+                return;
+            }
+            const number = parseInt(digits, 10);
+            const formatted = new Intl.NumberFormat('en-IN', {
+                style: 'currency',
+                currency: 'INR',
+                maximumFractionDigits: 0
+            }).format(number);
+            e.target.value = formatted;
+        });
+
+        priceInput.addEventListener('focus', (e) => {
+            if (e.target.value === '' || e.target.value === '₹') {
+                e.target.value = '₹';
+            }
+        });
+
+        priceInput.addEventListener('blur', (e) => {
+            if (e.target.value === '₹') {
+                e.target.value = '';
+            }
+        });
+    }
 
     // Show/hide custom brand input
     brandSelect.addEventListener('change', () => {
