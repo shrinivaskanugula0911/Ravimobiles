@@ -25,7 +25,7 @@ async function fetchSupabaseData() {
 
 async function saveToSupabase(key, value) {
     try {
-        const response = await fetch(`${SUPABASE_URL}/rest/v1/ravi_mobiles_config`, {
+        const response = await fetch(`${SUPABASE_URL}/rest/v1/ravi_mobiles_config?on_conflict=key`, {
             method: 'POST',
             headers: {
                 "apikey": SUPABASE_KEY,
@@ -35,7 +35,10 @@ async function saveToSupabase(key, value) {
             },
             body: JSON.stringify({ key: key, value: value })
         });
-        if (!response.ok) throw new Error("Supabase update failed");
+        if (!response.ok) {
+            const errText = await response.text();
+            throw new Error(`Supabase update failed (${response.status}): ${errText}`);
+        }
         return true;
     } catch (err) {
         console.error(`Error saving ${key} to Supabase:`, err);
