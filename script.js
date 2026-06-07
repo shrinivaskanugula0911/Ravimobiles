@@ -1,5 +1,5 @@
 const SUPABASE_URL = "https://ajvvmvnwapqeivkbfdfj.supabase.co";
-const SUPABASE_KEY = "sb_secret_JgrKnwB1GN2-IzWwphfOgA_94ienRq_";
+const SUPABASE_KEY = "sb_publishable_IWdtyPIKa78vE0xRWWdi9g_guQectu_";
 
 async function fetchSupabaseData() {
     try {
